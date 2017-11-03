@@ -49,6 +49,7 @@ RUN cd /build/ \
 	&& sed -i '95,101 s/^/#/' CMakeLists.txt \
 	&& sed -i '114 s/^/#/' CMakeLists.txt \
 	&& sed -i '116 s/^/#/' CMakeLists.txt \
+	&& sed -i "341s/.*/set(POPPLER_DATADIR \"\.\/poppler-data\")/" CMakeLists.txt \
 	&& sed -i "/^int\smain(/a if(argc!=3 || argv[1][0]=='-' || argv[2][0]=='-') {fprintf(stderr,\"This is a custom Poppler pdfinfo build. Please use the original version!\\\\n%s\\\\n%s\\\\n%s\\\\npdfinfo <PDF-file> <output-file>\\\\n\",PACKAGE_VERSION,popplerCopyright,xpdfCopyright); return 1;} else {freopen( argv[argc-1], \"w\", stdout); argc--;}" utils/pdfinfo.cc
 
 ENV COMMON_OPTIONS \
@@ -132,3 +133,15 @@ RUN mkdir /build/bin \
 	&& cp /build/linux_x86/utils/pdftotext ./pdftotext_linux_x86 \
 	&& cp /build/linux_x64/utils/pdfinfo ./pdfinfo_linux_x64 \
 	&& cp /build/linux_x64/utils/pdftotext ./pdftotext_linux_x64
+
+RUN cd /build/ \
+	&& wget -O poppler-data.tar.gz https://poppler.freedesktop.org/poppler-data-0.4.8.tar.gz \
+	&& mkdir poppler-data \
+	&& tar -xf poppler-data.tar.gz -C poppler-data --strip-components=1 \
+	&& cd /build/bin \
+	&& mkdir poppler-data \
+	&& cd poppler-data \
+	&& cp -r ../../poppler-data/cidToUnicode ./ \
+	&& cp -r ../../poppler-data/nameToUnicode ./ \
+	&& cp -r ../../poppler-data/COPYING ./ \
+	&& cp -r ../../poppler-data/COPYING.gpl2 ./
