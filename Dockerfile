@@ -49,7 +49,7 @@ RUN cd /build/ \
 	&& sed -i '95,101 s/^/#/' CMakeLists.txt \
 	&& sed -i '114 s/^/#/' CMakeLists.txt \
 	&& sed -i '116 s/^/#/' CMakeLists.txt \
-	&& sed -i "341s/.*/set(POPPLER_DATADIR \"\.\/poppler-data\")/" CMakeLists.txt \
+	&& sed -i "341s/.*/set(POPPLER_DATADIR \"share\/poppler\")/" CMakeLists.txt \
 	&& sed -i "/^int\smain(/a if(argc!=3 || argv[1][0]=='-' || argv[2][0]=='-') {fprintf(stderr,\"This is a custom Poppler pdfinfo build. Please use the original version!\\\\n%s\\\\n%s\\\\n%s\\\\npdfinfo <PDF-file> <output-file>\\\\n\",PACKAGE_VERSION,popplerCopyright,xpdfCopyright); return 1;} else {freopen( argv[argc-1], \"w\", stdout); argc--;}" utils/pdfinfo.cc
 
 ENV COMMON_OPTIONS \
@@ -139,9 +139,9 @@ RUN cd /build/ \
 	&& mkdir poppler-data \
 	&& tar -xf poppler-data.tar.gz -C poppler-data --strip-components=1 \
 	&& cd /build/bin \
-	&& mkdir poppler-data \
-	&& cd poppler-data \
-	&& cp -r ../../poppler-data/cidToUnicode ./ \
-	&& cp -r ../../poppler-data/nameToUnicode ./ \
-	&& cp -r ../../poppler-data/COPYING ./ \
-	&& cp -r ../../poppler-data/COPYING.gpl2 ./
+	&& mkdir -p share/poppler \
+	&& cd share/poppler \
+	&& cp -r ../../../poppler-data/cidToUnicode ./ \
+	&& cp -r ../../../poppler-data/nameToUnicode ./ \
+	&& cp -r ../../../poppler-data/COPYING ./ \
+	&& cp -r ../../../poppler-data/COPYING.gpl2 ./
