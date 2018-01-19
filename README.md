@@ -11,4 +11,4 @@ mv path_to_sdk/MacOSX10.11.sdk.tar.xz ./
 ./build.sh
 ```
 
-Check `./output` for the built binaries.
+Check `./build` for the built binaries.

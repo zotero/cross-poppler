@@ -52,10 +52,9 @@ RUN cd /build/ \
 	&& sed -i '98,104 s/^/#/' CMakeLists.txt \
 	&& sed -i '119 s/^/#/' CMakeLists.txt \
 	&& sed -i '121 s/^/#/' CMakeLists.txt \
-	&& sed -i "/static GBool printEnc/a static char datadir[8192] = \"\";" utils/pdftotext.cc \
-	&& sed -i "/\"output end-of-line convention (unix, dos, or mac)\"},/a {\"-datadir\",argString,datadir,sizeof(datadir),\"poppler data directory\"}," utils/pdftotext.cc \
-	&& sed -i "s/globalParams = new GlobalParams();/globalParams = new GlobalParams(datadir);/" utils/pdftotext.cc \
-	&& sed -i "/Win32Console win32console(&argc, &argv);/a if(argc!=3 || argv[1][0]=='-' || argv[2][0]=='-') {fprintf(stderr,\"This is a custom Poppler pdfinfo build. Please use the original version!\\\\n%s\\\\n%s\\\\n%s\\\\npdfinfo <PDF-file> <output-file>\\\\n\",PACKAGE_VERSION,popplerCopyright,xpdfCopyright); return 1;} else {freopen( argv[argc-1], \"w\", stdout); argc--;}" utils/pdfinfo.cc
+	&& sed -i "/Win32Console win32console(&argc, &argv);/a if(argc!=3 || argv[1][0]=='-' || argv[2][0]=='-') {fprintf(stderr,\"This is a custom Poppler pdfinfo build. Please use the original version!\\\\n%s\\\\n%s\\\\n%s\\\\npdfinfo <PDF-file> <output-file>\\\\n\",PACKAGE_VERSION,popplerCopyright,xpdfCopyright); return 1;} else {freopen( argv[argc-1], \"w\", stdout); argc--;}" utils/pdfinfo.cc \
+	&& sed -i '5871 s/^/\/\//' poppler/TextOutputDev.cc
+
 
 ENV COMMON_OPTIONS \
 		-DCMAKE_BUILD_TYPE=release \
