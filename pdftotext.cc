@@ -61,6 +61,7 @@
 #include <sstream>
 #include <iomanip>
 #include <iostream>
+#include "Win32Console.h"
 
 static int firstPage = 1;
 static int lastPage = 0;

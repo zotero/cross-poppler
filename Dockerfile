@@ -55,6 +55,7 @@ RUN cd /build/ \
 	&& sed -i "/Win32Console win32console(&argc, &argv);/a if(argc!=3 || argv[1][0]=='-' || argv[2][0]=='-') {fprintf(stderr,\"This is a custom Poppler pdfinfo build. Please use the original version!\\\\n%s\\\\n%s\\\\n%s\\\\npdfinfo <PDF-file> <output-file>\\\\n\",PACKAGE_VERSION,popplerCopyright,xpdfCopyright); return 1;} else {freopen( argv[argc-1], \"w\", stdout); argc--;}" utils/pdfinfo.cc \
 	&& sed -i '5871 s/^/\/\//' poppler/TextOutputDev.cc
 
+COPY pdftotext.cc /build/poppler/utils/pdftotext.cc
 
 ENV COMMON_OPTIONS \
 		-DCMAKE_BUILD_TYPE=release \
