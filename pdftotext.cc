@@ -25,7 +25,6 @@
 // Copyright (C) 2013 Yury G. Kudryashov <urkud.urkud@gmail.com>
 // Copyright (C) 2013 Suzuki Toshiya <mpsuzuki@hiroshima-u.ac.jp>
 // Copyright (C) 2015 Jeremy Echols <jechols@uoregon.edu>
-// Copyright (C) 2017 Adrian Johnson <ajohnson@redneon.com>
 //
 // To see a description of the changes please see the Changelog file that
 // came with your tarball or type make ChangeLog if you are building from git
@@ -38,6 +37,10 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
+#include <string>
+#include <sstream>
+#include <iomanip>
+#include <iostream>
 #include "parseargs.h"
 #include "printencodings.h"
 #include "goo/GooString.h"
@@ -57,69 +60,51 @@
 #include "UnicodeMap.h"
 #include "PDFDocEncoding.h"
 #include "Error.h"
-#include <string>
-#include <sstream>
-#include <iomanip>
-#include <iostream>
 #include "Win32Console.h"
 
 static int firstPage = 1;
 static int lastPage = 0;
 static double resolution = 72.0;
-static int x = 0;
-static int y = 0;
-static int w = 0;
-static int h = 0;
 static GBool json = gFalse;
 static GBool physLayout = gFalse;
 static double fixedPitch = 0;
 static GBool rawOrder = gFalse;
 static GBool noPageBreaks = gFalse;
-static char ownerPassword[33] = "\001";
-static char userPassword[33] = "\001";
 static GBool quiet = gFalse;
 static GBool printVersion = gFalse;
 static GBool printHelp = gFalse;
 static char datadir[8192] = "";
 
 static const ArgDesc argDesc[] = {
-        {"-f",           argInt,    &firstPage,    0,
+        {"-f",       argInt,    &firstPage,    0,
                 "first page to convert"},
-        {"-l",           argInt,    &lastPage,     0,
+        {"-l",       argInt,    &lastPage,     0,
                 "last page to convert"},
-        {"-r",           argFP,     &resolution,   0,
+        {"-r",       argFP,     &resolution,   0,
                 "resolution, in DPI (default is 72)"},
-        {"-x",           argInt,    &x,            0,
-                "x-coordinate of the crop area top left corner"},
-        {"-y",           argInt,    &y,            0,
-                "y-coordinate of the crop area top left corner"},
-        {"-W",           argInt,    &w,            0,
-                "width of crop area in pixels (default is 0)"},
-        {"-H",           argInt,    &h,            0,
-                "height of crop area in pixels (default is 0)"},
-        {"-layout",      argFlag,   &physLayout,   0,
+        {"-layout",  argFlag,   &physLayout,   0,
                 "maintain original physical layout"},
-        {"-fixed",       argFP,     &fixedPitch,   0,
+        {"-fixed",   argFP,     &fixedPitch,   0,
                 "assume fixed-pitch (or tabular) text"},
-        {"-raw",         argFlag,   &rawOrder,     0,
+        {"-raw",     argFlag,   &rawOrder,     0,
                 "keep strings in content stream order"},
-        {"-datadir",     argString, datadir,       sizeof(datadir),
+        {"-datadir", argString, datadir,       sizeof(datadir),
                 "poppler data directory"},
-        {"-nopgbrk",     argFlag,   &noPageBreaks, 0,
+        {"-nopgbrk", argFlag,   &noPageBreaks, 0,
                 "don't insert page breaks between pages"},
-        {"-json", argFlag,   &json,   0,
+        {"-json",    argFlag,   &json,         0,
                 "output JSON with metadata, layout and rich text"},
-        {"-q",           argFlag,   &quiet,        0,
+        {"-q",       argFlag,   &quiet,        0,
                 "don't print any messages or errors"},
-        {"-v",           argFlag,   &printVersion, 0,
+        {"-v",       argFlag,   &printVersion, 0,
                 "print copyright and version info"},
-        {"-h",           argFlag,   &printHelp,    0,
+        {"-h",       argFlag,   &printHelp,    0,
                 "print usage information"},
-        {"-help",        argFlag,   &printHelp,    0,
+        {"-help",    argFlag,   &printHelp,    0,
                 "print usage information"},
-        {"--help",       argFlag,   &printHelp,    0,
+        {"--help",   argFlag,   &printHelp,    0,
                 "print usage information"},
-        {"-?",           argFlag,   &printHelp,    0,
+        {"-?",       argFlag,   &printHelp,    0,
                 "print usage information"},
         {NULL}
 };
@@ -157,8 +142,8 @@ static void printInfoJSON(FILE *f, Dict *infoDict, UnicodeMap *uMap) {
 
     bool firstE = true;
     for (int k = 0; k < infoDict->getLength(); k++) {
-        const std::string keyStr = infoDict->getKey(k);
-        if(!keyStr.length()) continue;
+        const std::string keyStr = escape_json(infoDict->getKey(k));
+        if (!keyStr.length()) continue;
         Object obj = infoDict->getVal(k);
         if (obj.isString()) {
             if (firstE) firstE = false; else fprintf(f, ",");
@@ -200,7 +185,7 @@ void printDocJSON(FILE *f, PDFDoc *doc, TextOutputDev *textOut, int first, int l
 
     std::map<std::string, int> fonts;
     std::map<std::string, int> colors;
-    std::map<std::string,int>::iterator it;
+    std::map<std::string, int>::iterator it;
 
     fprintf(f, "{\"metadata\":{");
 
@@ -210,15 +195,12 @@ void printDocJSON(FILE *f, PDFDoc *doc, TextOutputDev *textOut, int first, int l
     }
 
     fprintf(f, "},");
-
     fprintf(f, "\"totalPages\":%d,", doc->getNumPages());
-
     fprintf(f, "\"pages\":[");
     bool firstP = true;
     for (int page = first; page <= last; ++page) {
         if (firstP) firstP = false; else fprintf(f, ",");
-        fprintf(f, "[%g,%g,[", doc->getPageMediaWidth(page),
-                doc->getPageMediaHeight(page));
+        fprintf(f, "[%g,%g,[", doc->getPageMediaWidth(page), doc->getPageMediaHeight(page));
         doc->displayPage(textOut, page, resolution, resolution, 0, gTrue, gFalse, gFalse);
         textPage = textOut->takeText();
         bool firstF = true;
@@ -229,8 +211,7 @@ void printDocJSON(FILE *f, PDFDoc *doc, TextOutputDev *textOut, int first, int l
             for (blk = flow->getBlocks(); blk; blk = blk->getNext()) {
                 if (firstB) firstB = false; else fprintf(f, ",");
                 blk->getBBox(&xMin, &yMin, &xMax, &yMax);
-                fprintf(f, "[%g,%g,%g,%g,[", xMin, yMin,
-                        xMax, yMax);
+                fprintf(f, "[%g,%g,%g,%g,[", xMin, yMin, xMax, yMax);
                 bool firstL = true;
                 for (line = blk->getLines(); line; line = line->getNext()) {
                     if (firstL) firstL = false; else fprintf(f, ",");
@@ -240,45 +221,38 @@ void printDocJSON(FILE *f, PDFDoc *doc, TextOutputDev *textOut, int first, int l
                         if (firstW) firstW = false; else fprintf(f, ",");
                         word->getBBox(&xMin, &yMin, &xMax, &yMax);
                         const std::string myString = escape_json(word->getText()->getCString());
-                        double dr,dg, db;
-                        int r,g,b;
+
+                        // Instead of the actual RGB offsets we only output a unique color number
+                        double dr, dg, db;
+                        int r, g, b;
+                        char colorStr[256];
+                        int color_nr = 0;
 
                         word->getColor(&dr, &dg, &db);
-
                         r = 255.0 * dr;
                         g = 255.0 * dg;
                         b = 255.0 * db;
 
+                        sprintf(colorStr, "%02x%02x%02x", r, g, b);
 
+                        colors.insert(std::make_pair(colorStr, colors.size()));
+                        it = colors.find(colorStr);
+                        if (it != colors.end()) {
+                            color_nr = it->second;
+                        }
+
+                        // Instead of the actual font names we only output a unique font number
                         int font_nr = 0;
                         TextFontInfo *fontInfo = word->getFontInfo(0);
 
-                        if(fontInfo->getFontName()) {
+                        if (fontInfo && fontInfo->getFontName()) {
                             const std::string fontName = escape_json(fontInfo->getFontName()->getCString());
-
                             fonts.insert(std::make_pair(fontName, fonts.size()));
-
                             it = fonts.find(fontName);
-
                             if (it != fonts.end()) {
                                 font_nr = it->second;
                             }
                         }
-
-                        char colorStr[256];
-
-                        sprintf(colorStr, "%02x%02x%02x", r, g, b);
-
-                        colors.insert(std::make_pair(colorStr, colors.size()));
-
-                        int color_nr = 0;
-
-                        it = colors.find(colorStr);
-
-                        if(it != colors.end()) {
-                            color_nr = it->second;
-                        }
-
 
                         fprintf(f,
                                 "["
@@ -333,22 +307,21 @@ int main(int argc, char *argv[]) {
     UnicodeMap *uMap;
     Object info;
     GBool ok;
-    char *p;
     int exitCode;
 
-  Win32Console win32Console(&argc, &argv);
-  exitCode = 99;
+    Win32Console win32Console(&argc, &argv);
+    exitCode = 99;
 
     // parse args
     ok = parseArgs(argDesc, &argc, argv);
 
-    if (!ok || argc < 2 || argc > 3 || printVersion || printHelp) {
-        fprintf(stderr, "This is a custom Poppler pdfinfo build. Please use the original version!\n");
+    if (!ok || argc != 3 || printVersion || printHelp) {
+        fprintf(stderr, "This is a custom Poppler pdftotext build. Please use the original version!\n");
         fprintf(stderr, "pdftotext version %s\n", PACKAGE_VERSION);
         fprintf(stderr, "%s\n", popplerCopyright);
         fprintf(stderr, "%s\n", xpdfCopyright);
         if (!printVersion) {
-            printUsage("pdftotext", "<PDF-file> [<text-file>]", argDesc);
+            printUsage("pdftotext", "<PDF-file> <output-file>", argDesc);
         }
         if (printVersion || printHelp)
             exitCode = 0;
@@ -377,34 +350,14 @@ int main(int argc, char *argv[]) {
         goto err1;
     }
 
-    if (fileName->cmp("-") == 0) {
-        delete fileName;
-        fileName = new GooString("fd://0");
-    }
-
     doc = PDFDocFactory().createPDFDoc(*fileName, NULL, NULL);
-
     if (!doc->isOk()) {
         exitCode = 1;
         goto err2;
     }
 
     // construct text file name
-    if (argc == 3) {
-        textFileName = new GooString(argv[2]);
-    } else if (fileName->cmp("fd://0") == 0) {
-        error(errCommandLine, -1, "You have to provide an output filename when reading form stdin.");
-        goto err2;
-    } else {
-        p = fileName->getCString() + fileName->getLength() - 4;
-        if (!strcmp(p, ".pdf") || !strcmp(p, ".PDF")) {
-            textFileName = new GooString(fileName->getCString(),
-                                         fileName->getLength() - 4);
-        } else {
-            textFileName = fileName->copy();
-        }
-        textFileName->append(json ? ".json" : ".txt");
-    }
+    textFileName = new GooString(argv[2]);
 
     // get page range
     if (firstPage < 1) {
@@ -422,14 +375,10 @@ int main(int argc, char *argv[]) {
 
     // output JSON
     if (json) {
-        if (!textFileName->cmp("-")) {
-            f = stdout;
-        } else {
-            if (!(f = fopen(textFileName->getCString(), "wb"))) {
-                error(errIO, -1, "Couldn't open text file '{0:t}'", textFileName);
-                exitCode = 2;
-                goto err3;
-            }
+        if (!(f = fopen(textFileName->getCString(), "wb"))) {
+            error(errIO, -1, "Couldn't open text file '{0:t}'", textFileName);
+            exitCode = 2;
+            goto err3;
         }
 
         textOut = new TextOutputDev(NULL, physLayout, fixedPitch, rawOrder, false);
@@ -437,24 +386,17 @@ int main(int argc, char *argv[]) {
         if (textOut->isOk()) {
             printDocJSON(f, doc, textOut, firstPage, lastPage, uMap);
         }
-        if (f != stdout) {
-            fclose(f);
-        }
+
+        fclose(f);
+
     } // output text
     else {
         textOut = new TextOutputDev(textFileName->getCString(),
                                     physLayout, fixedPitch, rawOrder, false);
         if (textOut->isOk()) {
-            if ((w == 0) && (h == 0) && (x == 0) && (y == 0)) {
-                doc->displayPages(textOut, firstPage, lastPage, resolution, resolution, 0,
-                                  gTrue, gFalse, gFalse);
-            } else {
-                for (int page = firstPage; page <= lastPage; ++page) {
-                    doc->displayPageSlice(textOut, page, resolution, resolution, 0,
-                                          gTrue, gFalse, gFalse,
-                                          x, y, w, h);
-                }
-            }
+            doc->displayPages(textOut, firstPage, lastPage, resolution, resolution, 0,
+                              gTrue, gFalse, gFalse);
+
         } else {
             delete textOut;
             exitCode = 2;
