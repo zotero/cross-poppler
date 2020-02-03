@@ -1,4 +1,2 @@
-.*
-build
-MacOSX10.11.sdk.tar.xz
-!.gitignore
+/build
+/MacOSX*.sdk.tar.xz
