@@ -1,9 +1,9 @@
 set(CMAKE_SYSTEM_NAME Darwin)
 
-set(CMAKE_C_COMPILER /usr/x86_64-apple-darwin15/bin/x86_64-apple-darwin15-cc)
-set(CMAKE_CXX_COMPILER /usr/x86_64-apple-darwin15/bin/x86_64-apple-darwin15-c++)
+file(GLOB CMAKE_C_COMPILER  /usr/osxcross/bin/x86_64-apple-darwin*-cc)
+file(GLOB CMAKE_CXX_COMPILER /usr/osxcross/bin/x86_64-apple-darwin*-c++)
 
-set(CMAKE_FIND_ROOT_PATH /usr/x86_64-apple-darwin15/bin)
+set(CMAKE_FIND_ROOT_PATH /usr/osxcross/bin)
 
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)

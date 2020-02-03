@@ -26,12 +26,15 @@ Also, a command line switch is added to customize the path to `poppler-data` dir
 
 PDF tools are build inside the Docker container.
 
-macOS 10.11 SDK is needed. Place `MacOSX10.11.sdk.tar.xz` to the current directory. [Extract it from Xcode 7.3](https://github.com/tpoechtrager/osxcross#packaging-the-sdk).
+A macOS SDK is needed. Place `MacOSX10.*.sdk.tar.xz` to the current directory. Refer to [here](https://github.com/tpoechtrager/osxcross#packaging-the-sdk) for instructions.
 
+Versions known to work:
+- MacOSX10.11.sdk.tar.xz generated from XCode 7.3
+- MacOSX10.15.sdk.tar.xz generated from XCode 11.3.1 on macOS 10.15.2
 ```
 git clone https://github.com/zotero/cross-poppler
 cd cross-poppler
-mv path_to_sdk/MacOSX10.11.sdk.tar.xz ./
+mv path_to_sdk/MacOSX10.*.sdk.tar.xz ./
 ./build.sh
 ```
 

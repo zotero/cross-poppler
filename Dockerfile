@@ -1,12 +1,15 @@
-FROM debian:jessie
+FROM debian:buster
 
 LABEL maintainer="Martynas Bagdonas <git.martynas@gmail.com>"
 
+ARG SDK=MacOSX*.sdk.tar.xz
+
 RUN apt-get update \
-	&& apt-get -y install \
+	&& apt-get --no-install-recommends -y install \
 		git \
 		wget \
 		build-essential \
+		ca-certificates \
 		llvm \
 		llvm-dev \
 		gcc-multilib \
@@ -19,7 +22,12 @@ RUN apt-get update \
 		sed \
 		clang \
 		libxml2-dev \
-		patch
+		patch \
+		libssl-dev \
+		zlib1g-dev \
+		python \
+	&& apt-get clean \
+	&& rm -rf /var/lib/apt/lists/*
 
 RUN mkdir /build \
 	&& mkdir /build/darwin_x64 \
@@ -30,11 +38,11 @@ RUN mkdir /build \
 
 RUN git clone https://github.com/tpoechtrager/osxcross /build/osxcross
 
-COPY MacOSX10.11.sdk.tar.xz /build/osxcross/tarballs/MacOSX10.11.sdk.tar.xz
+COPY ${SDK} /build/osxcross/tarballs/
 
 RUN cd /build/osxcross \
-	&& echo | SDK_VERSION=10.11 OSX_VERSION_MIN=10.4 UNATTENDED=1 ./build.sh \
-	&& mv /build/osxcross/target /usr/x86_64-apple-darwin15
+	&& echo | TARGET_DIR=/usr/osxcross UNATTENDED=1 ./build.sh \
+	&& rm -rf /build/osxcross
 
 COPY darwin_x64.cmake /build/darwin_x64.cmake
 COPY windows_x86.cmake /build/windows_x86.cmake
